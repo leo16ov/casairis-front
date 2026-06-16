@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import {
   IconCart, IconUser, IconSearch,
-  IconHome, IconBag, IconMsg, IconMenu, IconClose,
+  IconHome, IconBag, IconMsg, IconMenu, IconClose, IconAdmin,
 } from "./icons";
 import { CATEGORIES } from "../data/data";
 import CartDropdown from "./CartDropdown";
 
 // ─── Account dropdown ─────────────────────────────────────────────────────────
-function AccountDropdown({ user, onLogout, onLogin, onClose }) {
+const isAdmin = (u) => u && (u.rol || "").toLowerCase() === "admin";
+
+function AccountDropdown({ user, onLogout, onLogin, onGoAdmin, onClose }) {
   return (
     <div className="account-dropdown">
       {user ? (
@@ -22,6 +24,14 @@ function AccountDropdown({ user, onLogout, onLogin, onClose }) {
             </div>
           </div>
           <div className="account-divider" />
+          {isAdmin(user) && (
+            <button
+              className="btn-account-action btn-admin-drop"
+              onClick={() => { onGoAdmin(); onClose(); }}
+            >
+              Panel de administración
+            </button>
+          )}
           <button
             className="btn-account-action btn-logout"
             onClick={() => { onLogout(); onClose(); }}
@@ -115,6 +125,16 @@ export default function Header({
             <span className="nav-label">Contacto</span>
           </button>
 
+          {isAdmin(user) && (
+            <button
+              className={`nav-btn desktop-only nav-btn-admin ${page === "admin" ? "active" : ""}`}
+              onClick={() => goTo("admin")}
+            >
+              <IconAdmin size={20} />
+              <span className="nav-label">Admin</span>
+            </button>
+          )}
+
           {/* Cart */}
           <div className="cart-wrap" ref={cartRef}>
             <button
@@ -151,6 +171,7 @@ export default function Header({
                 user={user}
                 onLogout={onLogout}
                 onLogin={() => goTo("login")}
+                onGoAdmin={() => goTo("admin")}
                 onClose={() => setAccountOpen(false)}
               />
             )}

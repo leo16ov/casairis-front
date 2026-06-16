@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { register, googleLoginUrl } from "../lib/api";
+import { register, googleLoginUrl } from "../api/api";
+import { GoogleIcon } from "../components/icons";
 
 export default function RegisterPage({ setPage, onLogin }) {
   const [form,    setForm]    = useState({ name: "", surname: "", email: "", pass: "" });
@@ -16,7 +17,6 @@ export default function RegisterPage({ setPage, onLogin }) {
     }
     setLoading(true);
     try {
-      // El DNI y el teléfono no se piden acá: quedan NULL en la DB.
       const user = await register({
         nombre:   form.name,
         apellido: form.surname,
@@ -39,29 +39,41 @@ export default function RegisterPage({ setPage, onLogin }) {
 
         {error && <p className="auth-error">{error}</p>}
 
-        <label>Nombre</label>
-        <input value={form.name} onChange={set("name")} />
+        <div className="form-row">
+          <div className="form-group form-group--narrow">
+            <label className="form-label">Nombre</label>
+            <input className="form-input" value={form.name} onChange={set("name")} />
+          </div>
+          <div className="form-group form-group--narrow">
+            <label className="form-label">Apellido</label>
+            <input className="form-input" value={form.surname} onChange={set("surname")} />
+          </div>
+        </div>
 
-        <label>Apellido</label>
-        <input value={form.surname} onChange={set("surname")} />
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input className="form-input" type="email" value={form.email} onChange={set("email")} />
+        </div>
 
-        <label>Email</label>
-        <input type="email" value={form.email} onChange={set("email")} />
+        <div className="form-group">
+          <label className="form-label">Contraseña</label>
+          <input className="form-input" type="password" value={form.pass} onChange={set("pass")} />
+        </div>
 
-        <label>Contraseña</label>
-        <input type="password" value={form.pass} onChange={set("pass")} />
-
-        <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+        <button className="btn-auth" onClick={handleSubmit} disabled={loading}>
           {loading ? "Creando…" : "Registrarme"}
         </button>
 
-        <button className="btn btn-google" onClick={() => (window.location.href = googleLoginUrl())}>
+        <div className="auth-divider"><span>o</span></div>
+
+        <button className="btn-google" onClick={() => (window.location.href = googleLoginUrl())}>
+          <GoogleIcon />
           Continuar con Google
         </button>
 
         <p className="auth-switch">
           ¿Ya tenés cuenta?{" "}
-          <button className="link" onClick={() => setPage("login")}>Iniciá sesión</button>
+          <button className="link-btn" onClick={() => setPage("login")}>Iniciá sesión</button>
         </p>
       </div>
     </main>

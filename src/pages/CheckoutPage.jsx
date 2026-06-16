@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createCheckout, isLoggedIn } from "../lib/api";
+import { createCheckout, isLoggedIn } from "../api/api";
 
 export default function CheckoutPage({ cart = [], user, setPage, onOrderComplete }) {
   const [delivery, setDelivery] = useState("envio"); // "envio" | "retiro"

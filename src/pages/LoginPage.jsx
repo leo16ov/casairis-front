@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { login, googleLoginUrl } from "../lib/api";
+import { login, googleLoginUrl } from "../api/api";
+import { GoogleIcon } from "../components/icons";
 
 export default function LoginPage({ setPage, onLogin }) {
   const [email,    setEmail]    = useState("");
@@ -32,33 +33,42 @@ export default function LoginPage({ setPage, onLogin }) {
 
         {error && <p className="auth-error">{error}</p>}
 
-        <label>Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        />
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input
+            className="form-input"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          />
+        </div>
 
-        <label>Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        />
+        <div className="form-group">
+          <label className="form-label">Contraseña</label>
+          <input
+            className="form-input"
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          />
+        </div>
 
-        <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+        <button className="btn-auth" onClick={handleSubmit} disabled={loading}>
           {loading ? "Ingresando…" : "Ingresar"}
         </button>
 
-        <button className="btn btn-google" onClick={() => (window.location.href = googleLoginUrl())}>
+        <div className="auth-divider"><span>o</span></div>
+
+        <button className="btn-google" onClick={() => (window.location.href = googleLoginUrl())}>
+          <GoogleIcon />
           Continuar con Google
         </button>
 
         <p className="auth-switch">
           ¿No tenés cuenta?{" "}
-          <button className="link" onClick={() => setPage("register")}>Registrate</button>
+          <button className="link-btn" onClick={() => setPage("register")}>Registrate</button>
         </p>
       </div>
     </main>

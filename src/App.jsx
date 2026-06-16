@@ -8,7 +8,10 @@ import OrdersPage   from "./pages/OrdersPage";
 import ContactPage  from "./pages/ContactPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ProductPage  from "./pages/ProductPage";
-import { getProducts, getProfile, getToken, setToken, clearToken } from "./lib/api";
+import AdminPage    from "./pages/AdminPage";
+import { getProducts, getProfile, getToken, setToken, clearToken } from "./api/api";
+
+const isAdmin = (u) => u && (u.rol || "").toLowerCase() === "admin";
 
 export default function App() {
   const [page,           setPage]           = useState("home");
@@ -38,16 +41,26 @@ export default function App() {
 
     if (tokenFromOAuth) {
       setToken(tokenFromOAuth);
-      // Limpia la URL para no dejar el token a la vista
       window.history.replaceState({}, "", window.location.pathname);
     }
 
     if (getToken()) {
       getProfile()
-        .then(p => setUser({ name: p.email?.split("@")[0] || "Usuario", email: p.email }))
+        .then(p => {
+          const u = { name: p.email?.split("@")[0] || "Usuario", email: p.email, rol: p.rol };
+          setUser(u);
+          // Si recién volvió de Google y es admin, lo llevamos al panel.
+          if (tokenFromOAuth && isAdmin(u)) setPage("admin");
+        })
         .catch(() => clearToken());
     }
   }, []);
+
+  // Login desde formularios: guarda usuario y enruta admin → panel.
+  const handleLogin = (u) => {
+    setUser(u);
+    setPage(isAdmin(u) ? "admin" : "home");
+  };
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
   const addToCart = (p) => {
@@ -69,65 +82,45 @@ export default function App() {
   };
 
   const handleOrderComplete = () => setCart([]);
-  const handleLogout = () => { clearToken(); setUser(null); };
+  const handleLogout = () => { clearToken(); setUser(null); setPage("home"); };
 
   // ── Page routing ────────────────────────────────────────────────────────────
   const renderPage = () => {
+    // Protege el panel: solo admins.
+    if (page === "admin") {
+      if (!isAdmin(user)) return homeView();
+      return <AdminPage user={user} setPage={setPage} onLogout={handleLogout} />;
+    }
+
     switch (page) {
-      case "home":
-        return (
-          <HomePage
-            products={products}
-            loading={loading}
-            loadError={loadError}
-            onAddToCart={addToCart}
-            search={search}
-            activeCategory={activeCategory}
-            setPage={setPage}
-            setProductId={setProductId}
-          />
-        );
-      case "product":
-        return (
-          <ProductPage
-            products={products}
-            productId={productId}
-            onAddToCart={addToCart}
-            setPage={setPage}
-          />
-        );
-      case "login":
-        return <LoginPage setPage={setPage} onLogin={setUser} />;
-      case "register":
-        return <RegisterPage setPage={setPage} onLogin={setUser} />;
-      case "orders":
-        return <OrdersPage user={user} setPage={setPage} />;
-      case "contact":
-        return <ContactPage />;
-      case "checkout":
-        return (
-          <CheckoutPage
-            cart={cart}
-            user={user}
-            setPage={setPage}
-            onOrderComplete={handleOrderComplete}
-          />
-        );
-      default:
-        return (
-          <HomePage
-            products={products}
-            loading={loading}
-            loadError={loadError}
-            onAddToCart={addToCart}
-            search={search}
-            activeCategory={activeCategory}
-            setPage={setPage}
-            setProductId={setProductId}
-          />
-        );
+      case "home":     return homeView();
+      case "product":  return <ProductPage products={products} productId={productId} onAddToCart={addToCart} setPage={setPage} />;
+      case "login":    return <LoginPage setPage={setPage} onLogin={handleLogin} />;
+      case "register": return <RegisterPage setPage={setPage} onLogin={handleLogin} />;
+      case "orders":   return <OrdersPage user={user} setPage={setPage} />;
+      case "contact":  return <ContactPage />;
+      case "checkout": return <CheckoutPage cart={cart} user={user} setPage={setPage} onOrderComplete={handleOrderComplete} />;
+      default:         return homeView();
     }
   };
+
+  const homeView = () => (
+    <HomePage
+      products={products}
+      loading={loading}
+      loadError={loadError}
+      onAddToCart={addToCart}
+      search={search}
+      activeCategory={activeCategory}
+      setPage={setPage}
+      setProductId={setProductId}
+    />
+  );
+
+  // El panel admin se muestra sin el header/footer de la tienda.
+  if (page === "admin" && isAdmin(user)) {
+    return <AdminPage user={user} setPage={setPage} onLogout={handleLogout} />;
+  }
 
   return (
     <div className="app-root">

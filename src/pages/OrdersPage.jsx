@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getOrders, isLoggedIn } from "../lib/api";
+import { getOrders, isLoggedIn } from "../api/api";
 
 // Etiquetas legibles para los estados del ENUM estado_orden.
 const ESTADOS = {
