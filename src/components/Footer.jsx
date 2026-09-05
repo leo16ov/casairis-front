@@ -1,4 +1,4 @@
-export default function Footer() {
+export default function Footer({ setPage, adminAuthed, onAdminLogout }) {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
@@ -12,11 +12,21 @@ export default function Footer() {
         </div>
         <div className="footer-links">
           <h4>Ayuda</h4>
-          <ul><li>Envíos</li><li>Devoluciones</li><li>Talle guía</li><li>FAQ</li></ul>
+          <ul><li>Envíos</li><li>Devoluciones</li><li>FAQ</li></ul>
         </div>
         <div className="footer-links">
           <h4>Empresa</h4>
-          <ul><li>Sobre nosotros</li><li>Blog</li><li>Careers</li></ul>
+          <ul>
+            <li><button className="link-btn" onClick={() => setPage("contact")}>Contacto</button></li>
+            {adminAuthed ? (
+              <>
+                <li><button className="link-btn" onClick={() => setPage("admin")}>Panel admin</button></li>
+                <li><button className="link-btn" onClick={onAdminLogout}>Cerrar sesión</button></li>
+              </>
+            ) : (
+              <li><button className="link-btn" onClick={() => setPage("admin")}>Iniciar sesión</button></li>
+            )}
+          </ul>
         </div>
       </div>
       <div className="footer-bottom">

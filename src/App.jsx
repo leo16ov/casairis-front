@@ -2,65 +2,41 @@ import { useState, useEffect } from "react";
 import Header       from "./components/Header";
 import Footer       from "./components/Footer";
 import HomePage     from "./pages/HomePage";
-import LoginPage    from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import OrdersPage   from "./pages/OrdersPage";
 import ContactPage  from "./pages/ContactPage";
 import CheckoutPage from "./pages/CheckoutPage";
-import ProductPage  from "./pages/ProductPage";
 import AdminPage    from "./pages/AdminPage";
-import { getProducts, getProfile, getToken, setToken, clearToken } from "./api/api";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import { IconCart, IconWhatsApp } from "./components/icons";
+import { getProducts, getCategories, adminLogout, onAdminAuthChange } from "./api/api";
 
-const isAdmin = (u) => u && (u.rol || "").toLowerCase() === "admin";
+// TODO: reemplazá por tu número real de WhatsApp (formato internacional, sin +, sin espacios)
+const WHATSAPP_NUMBER = "5491133704879";
 
 export default function App() {
   const [page,           setPage]           = useState("home");
-  const [productId,      setProductId]      = useState(null);
   const [cart,           setCart]           = useState([]);
-  const [user,           setUser]           = useState(null);
   const [search,         setSearch]         = useState("");
   const [activeCategory, setActiveCategory] = useState("todos");
 
-  // Productos traídos del backend
-  const [products,  setProducts]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [loadError, setLoadError] = useState("");
+  // null = todavía no sabemos si hay sesión; true/false una vez que Firebase responde
+  const [adminAuthed, setAdminAuthed] = useState(null);
 
-  // ── Carga inicial de productos ──────────────────────────────────────────────
+  const [products,   setProducts]   = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [loadError,  setLoadError]  = useState("");
+
   useEffect(() => {
-    getProducts()
-      .then(setProducts)
+    Promise.all([getProducts(), getCategories()])
+      .then(([p, c]) => { setProducts(p || []); setCategories(c || []); })
       .catch(e => setLoadError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Sesión: retorno de Google (?token=) o token ya guardado ─────────────────
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenFromOAuth = params.get("token");
-
-    if (tokenFromOAuth) {
-      setToken(tokenFromOAuth);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-
-    if (getToken()) {
-      getProfile()
-        .then(p => {
-          const u = { name: p.email?.split("@")[0] || "Usuario", email: p.email, rol: p.rol };
-          setUser(u);
-          // Si recién volvió de Google y es admin, lo llevamos al panel.
-          if (tokenFromOAuth && isAdmin(u)) setPage("admin");
-        })
-        .catch(() => clearToken());
-    }
+    const unsub = onAdminAuthChange(setAdminAuthed);
+    return unsub;
   }, []);
-
-  // Login desde formularios: guarda usuario y enruta admin → panel.
-  const handleLogin = (u) => {
-    setUser(u);
-    setPage(isAdmin(u) ? "admin" : "home");
-  };
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
   const addToCart = (p) => {
@@ -81,25 +57,16 @@ export default function App() {
     );
   };
 
+  const removeFromCart = (id) => setCart(c => c.filter(i => i.id !== id));
   const handleOrderComplete = () => setCart([]);
-  const handleLogout = () => { clearToken(); setUser(null); setPage("home"); };
+  const handleAdminLogout = () => { adminLogout(); setPage("home"); };
 
   // ── Page routing ────────────────────────────────────────────────────────────
   const renderPage = () => {
-    // Protege el panel: solo admins.
-    if (page === "admin") {
-      if (!isAdmin(user)) return homeView();
-      return <AdminPage user={user} setPage={setPage} onLogout={handleLogout} />;
-    }
-
     switch (page) {
       case "home":     return homeView();
-      case "product":  return <ProductPage products={products} productId={productId} onAddToCart={addToCart} setPage={setPage} />;
-      case "login":    return <LoginPage setPage={setPage} onLogin={handleLogin} />;
-      case "register": return <RegisterPage setPage={setPage} onLogin={handleLogin} />;
-      case "orders":   return <OrdersPage user={user} setPage={setPage} />;
       case "contact":  return <ContactPage />;
-      case "checkout": return <CheckoutPage cart={cart} user={user} setPage={setPage} onOrderComplete={handleOrderComplete} />;
+      case "checkout": return <CheckoutPage cart={cart} setPage={setPage} onOrderComplete={handleOrderComplete} />;
       default:         return homeView();
     }
   };
@@ -107,37 +74,63 @@ export default function App() {
   const homeView = () => (
     <HomePage
       products={products}
+      categories={categories}
       loading={loading}
       loadError={loadError}
+      cart={cart}
       onAddToCart={addToCart}
+      onUpdateQty={updateQty}
       search={search}
+      setSearch={setSearch}
       activeCategory={activeCategory}
-      setPage={setPage}
-      setProductId={setProductId}
+      setActiveCategory={setActiveCategory}
     />
   );
 
-  // El panel admin se muestra sin el header/footer de la tienda.
-  if (page === "admin" && isAdmin(user)) {
-    return <AdminPage user={user} setPage={setPage} onLogout={handleLogout} />;
+  // El panel admin (y su login) se muestran sin el header/footer de la tienda.
+  if (page === "admin") {
+    if (adminAuthed === null) {
+      return <main className="home-status"><p>Cargando…</p></main>;
+    }
+    if (!adminAuthed) {
+      return <AdminLoginPage setPage={setPage} />;
+    }
+    return <AdminPage setPage={setPage} onLogout={handleAdminLogout} />;
   }
+
+  const cartTotal = cart.reduce((s, i) => s + i.precio * i.qty, 0);
+  const showFloatingCart = cart.length > 0 && page !== "checkout";
+
+  const openWhatsApp = () => {
+    const msg = "¡Hola! Tengo una consulta.";
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
 
   return (
     <div className="app-root">
       <Header
-        page={page}
         setPage={setPage}
         cart={cart}
         onUpdateQty={updateQty}
-        user={user}
-        onLogout={handleLogout}
+        onRemoveFromCart={removeFromCart}
         search={search}
         setSearch={setSearch}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
       />
       {renderPage()}
-      <Footer />
+      <Footer setPage={setPage} adminAuthed={!!adminAuthed} onAdminLogout={handleAdminLogout} />
+
+      {showFloatingCart && (
+        <button className="floating-cart-bar" onClick={() => setPage("checkout")}>
+          <span className="floating-cart-total">${cartTotal.toFixed(2)}</span>
+          <span className="floating-cart-cta"><IconCart size={16} /> Terminar pedido</span>
+        </button>
+      )}
+
+      <button className="floating-whatsapp-btn" onClick={openWhatsApp} title="Escribinos por WhatsApp">
+        <IconWhatsApp size={26} />
+      </button>
     </div>
   );
 }

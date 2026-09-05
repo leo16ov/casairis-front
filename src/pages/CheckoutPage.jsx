@@ -1,166 +1,129 @@
 import { useState } from "react";
-import { createCheckout, isLoggedIn } from "../api/api";
+import { IconCart } from "../components/icons";
+import { createOrder } from "../api/api";     // ← nuevo import
 
-export default function CheckoutPage({ cart = [], user, setPage, onOrderComplete }) {
-  const [delivery, setDelivery] = useState("envio");
-  const [addr,     setAddr]     = useState({ street: "", number: "", city: "", province: "", postal: "" });
-  const [error,    setError]    = useState("");
-  const [loading,  setLoading]  = useState(false);
+// ...
 
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const set = (k) => (e) => setAddr(a => ({ ...a, [k]: e.target.value }));
+export default function CheckoutPage({ cart = [], setPage, onOrderComplete }) {
+  const [form, setForm] = useState({ name: "", email: "", areaCode: "", phone: "", message: "" });
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);   // ← nuevo estado
 
-  const handleConfirm = async () => {
+  const total = cart.reduce((s, i) => s + i.precio * i.qty, 0);
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const handleSubmit = async () => {               // ← ahora es async
     setError("");
-    if (!isLoggedIn()) {
-      setError("Iniciá sesión para finalizar la compra.");
-      setPage("login");
-      return;
-    }
-    if (cart.length === 0) {
-      setError("Tu carrito está vacío.");
-      return;
-    }
-    if (delivery === "envio" && (!addr.street || !addr.city)) {
-      setError("Completá la dirección de envío.");
+    if (cart.length === 0) { setError("Tu carrito está vacío."); return; }
+    if (!form.name || !form.email || !form.phone) {
+      setError("Completá nombre, email y teléfono.");
       return;
     }
 
-    const payload = {
-      items: cart.map(i => ({
-        product_id: i.id,
-        quantity:   i.qty,
-        talle:      i.selectedSize  || "",
-        color:      i.selectedColor || "",
-      })),
-      delivery,
-      address: delivery === "envio" ? addr : null,
-    };
+    setSending(true);
 
-    setLoading(true);
+    // Registramos el pedido en Firestore con fecha y monto
     try {
-      const { checkout_url } = await createCheckout(payload);
-      onOrderComplete?.();
-      window.location.href = checkout_url;
+      await createOrder({
+        items: cart,
+        total,
+        cliente: {
+          name: form.name,
+          email: form.email,
+          phone: `${form.areaCode} ${form.phone}`,
+          message: form.message,
+        },
+      });
     } catch (e) {
-      setError(e.message);
-      setLoading(false);
+      console.error("No se pudo guardar el pedido en Firestore:", e);
+      // Seguimos igual: no queremos bloquear el envío por WhatsApp
+      // por un error de guardado.
     }
+
+    const lines = cart.map(i => `• ${i.nombre} x${i.qty} — $${(i.precio * i.qty).toFixed(2)}`).join("\n");
+    const message =
+`¡Hola! Quiero hacer un pedido:
+
+${lines}
+
+Total: $${total.toFixed(2)}
+
+Nombre: ${form.name}
+Email: ${form.email}
+Teléfono: ${form.areaCode} ${form.phone}${form.message ? `\nMensaje: ${form.message}` : ""}`;
+
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
+    setSending(false);
+    onOrderComplete?.();
+    setPage("home");
   };
 
   return (
-    <main className="checkout-page">
-      <button className="btn-back" onClick={() => setPage("home")}>← Seguir comprando</button>
+    <main className="checkout-page checkout-simple">
+      <div className="checkout-side-panel" aria-hidden="true" />
 
-      {error && <p className="auth-error">{error}</p>}
+      <div className="checkout-form-card">
+        <button className="btn-back" onClick={() => setPage("home")}>← Atrás</button>
 
-      <div className="checkout-inner">
+        <h1 className="checkout-form-title">Completá los datos y enviá tu pedido</h1>
 
-        {/* ── Columna izquierda ── */}
-        <div>
-          <p className="delivery-section-title">Método de entrega</p>
-          <div className="delivery-toggle">
-            <button
-              className={`toggle-opt ${delivery === "envio" ? "toggle-active" : ""}`}
-              onClick={() => setDelivery("envio")}
-            >
-              <span className="toggle-icon">🚚</span>
-              Envío a domicilio
-            </button>
-            <button
-              className={`toggle-opt ${delivery === "retiro" ? "toggle-active" : ""}`}
-              onClick={() => setDelivery("retiro")}
-            >
-              <span className="toggle-icon">🏪</span>
-              Retiro en local
-            </button>
-          </div>
+        {error && <p className="auth-error">{error}</p>}
 
-          {delivery === "envio" && (
-            <div className="delivery-body">
-              <p className="delivery-section-title">Dirección de envío</p>
-              <div className="form-row">
-                <div className="form-group form-group--narrow">
-                  <label className="form-label">Calle</label>
-                  <input className="form-input" value={addr.street} onChange={set("street")} />
-                </div>
-                <div className="form-group form-group--narrow">
-                  <label className="form-label">Número</label>
-                  <input className="form-input" value={addr.number} onChange={set("number")} />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group form-group--narrow">
-                  <label className="form-label">Ciudad</label>
-                  <input className="form-input" value={addr.city} onChange={set("city")} />
-                </div>
-                <div className="form-group form-group--narrow">
-                  <label className="form-label">Provincia</label>
-                  <input className="form-input" value={addr.province} onChange={set("province")} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Código postal</label>
-                <input className="form-input" value={addr.postal} onChange={set("postal")} />
-              </div>
-            </div>
-          )}
-
-          {delivery === "retiro" && (
-            <div className="delivery-body">
-              <div className="pickup-wrap">
-                <div className="pickup-info">
-                  <span className="pickup-icon">📍</span>
-                  <div className="pickup-details">
-                    <p className="pickup-title">Sucursal Central</p>
-                    <p className="pickup-address">Av. Corrientes 1234, Buenos Aires</p>
-                    <p className="pickup-hours">Lun–Vie 10:00–20:00 · Sáb 10:00–14:00</p>
-                    <p className="pickup-note">
-                      Traé tu número de orden. El pedido estará listo en 24–48 hs hábiles.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <button className="btn-confirm" onClick={handleConfirm} disabled={loading}>
-            {loading ? "Redirigiendo a Mercado Pago…" : "Confirmar y pagar"}
-          </button>
+        <div className="form-group">
+          <label className="form-label">Nombre y apellido</label>
+          <input className="form-input" value={form.name} onChange={set("name")} />
         </div>
 
-        {/* ── Columna derecha: resumen ── */}
-        <aside className="order-summary">
-          <h2 className="summary-title">Tu pedido</h2>
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input className="form-input" type="email" value={form.email} onChange={set("email")} />
+        </div>
+
+        <p className="delivery-section-title">Teléfono</p>
+        <div className="form-row">
+          <div className="form-group form-group--narrow">
+            <label className="form-label">Código de área</label>
+            <input className="form-input" value={form.areaCode} onChange={set("areaCode")} />
+          </div>
+          <div className="form-group form-group--narrow">
+            <label className="form-label">Número</label>
+            <input className="form-input" value={form.phone} onChange={set("phone")} />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">¿Querés dejarle un mensaje al vendedor?</label>
+          <textarea className="form-input form-textarea" rows={3} value={form.message} onChange={set("message")} />
+        </div>
+
+        <button className="btn-confirm" onClick={handleSubmit}>Enviar pedido →</button>
+
+        <div className="checkout-order-detail">
+          <div className="cart-drop-header">
+            <span className="cart-drop-title"><IconCart size={18} /> Detalle del pedido</span>
+            <span className="cart-drop-total">${total.toFixed(2)}</span>
+          </div>
 
           {cart.length === 0 ? (
-            <p style={{ color: "#aaa", fontSize: 13 }}>Carrito vacío.</p>
+            <p className="cart-empty">Carrito vacío.</p>
           ) : (
-            <div className="summary-list">
+            <div className="cart-items cart-items-static">
               {cart.map(i => (
-                <div className="summary-item" key={i.id}>
-                  <img
-                    className="summary-thumb"
-                    src={i.images?.[0] || i.image1}
-                    alt={i.name}
-                  />
-                  <div className="summary-item-info">
-                    <p className="summary-item-name">{i.name}</p>
-                    <p className="summary-item-qty">× {i.qty}</p>
+                <div className="cart-drop-item" key={i.id}>
+                  <img className="cart-thumb" src={i.imagenes?.[0]} alt={i.nombre} />
+                  <div className="cart-item-info">
+                    <p className="cart-item-name">{i.nombre}</p>
+                    <p className="cart-item-price">× {i.qty}</p>
                   </div>
-                  <span className="summary-item-price">${i.price * i.qty}</span>
+                  <span className="cart-item-price">${(i.precio * i.qty).toFixed(2)}</span>
                 </div>
               ))}
             </div>
           )}
-
-          <div className="summary-total">
-            <span>Total</span>
-            <span className="total-price">${total}</span>
-          </div>
-        </aside>
-
+        </div>
       </div>
+
+      <div className="checkout-side-panel" aria-hidden="true" />
     </main>
   );
 }

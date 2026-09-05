@@ -1,42 +1,39 @@
-import { useState } from "react";
-import { IconCart } from "./icons";
- 
-export default function ProductCard({ product, onAddToCart, onNavigate }) {
-  const [imgHovered, setImgHovered] = useState(false);
- 
-  // Support both old {image1,image2} and new {images[]} shapes
-  const img1 = product.image1 ?? product.images?.[0];
-  const img2 = product.image2 ?? product.images?.[1] ?? img1;
- 
-  const handleCardClick = (e) => {
-    // Don't navigate if the cart button was clicked
-    if (e.target.closest(".btn-cart-add")) return;
-    onNavigate?.(product.id);
-  };
- 
+import { IconCart, IconPlus, IconMinus } from "./icons";
+
+export default function ProductCard({ product, qty = 0, onAdd, onUpdateQty }) {
+  const img = product.imagenes?.[0] || "https://placehold.co/400x500?text=Sin+imagen";
+
   return (
-    <div className="product-card" onClick={handleCardClick} style={{ cursor: "pointer" }}>
-      {product.badge && <span className="product-badge">{product.badge}</span>}
-      <div
-        className="product-img-wrap"
-        onMouseEnter={() => setImgHovered(true)}
-        onMouseLeave={() => setImgHovered(false)}
-      >
-        <img src={img1} alt={product.name} className={`product-img ${imgHovered ? "hidden-img" : "visible-img"}`} />
-        <img src={img2} alt={`${product.name} alt`} className={`product-img ${imgHovered ? "visible-img" : "hidden-img"}`} />
+    <div className="product-card">
+      <div className="product-img-wrap">
+        <img src={img} alt={product.nombre} className="product-img visible-img" />
       </div>
+
       <div className="product-info">
-        <p className="product-category">{product.category.toUpperCase()}</p>
-        <h3 className="product-name">{product.name}</h3>
+        <h3 className="product-name">{product.nombre}</h3>
+
         <div className="product-footer">
-          <span className="product-price">${product.price.toFixed(2)}</span>
-          <button
-            className="btn-cart-add"
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-            title="Agregar al carrito"
-          >
-            <IconCart size={18} />
-          </button>
+          <span className="product-price">${product.precio.toFixed(2)}</span>
+
+          {qty === 0 ? (
+            <button
+              className="btn-cart-add"
+              onClick={() => onAdd(product)}
+              title="Agregar al carrito"
+            >
+              <IconCart size={18} />
+            </button>
+          ) : (
+            <div className="qty-ctrl qty-ctrl-card">
+              <button className="qty-btn" onClick={() => onUpdateQty(product.id, -1)}>
+                <IconMinus />
+              </button>
+              <span className="qty-num">{qty}</span>
+              <button className="qty-btn" onClick={() => onUpdateQty(product.id, 1)}>
+                <IconPlus />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

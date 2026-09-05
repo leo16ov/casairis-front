@@ -1,13 +1,13 @@
-import { IconClose, IconPlus, IconMinus } from "./icons";
+import { IconClose, IconPlus, IconMinus, IconCart } from "./icons";
 
-export default function CartDropdown({ cart, onUpdateQty, onClose, onCheckout }) {
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+export default function CartDropdown({ cart, onUpdateQty, onRemove, onClose, onCheckout }) {
+  const total = cart.reduce((s, i) => s + i.precio * i.qty, 0);
 
   return (
     <div className="cart-dropdown">
       <div className="cart-drop-header">
-        <span className="cart-drop-title">Mi Carrito</span>
-        <button className="btn-icon-plain" onClick={onClose}><IconClose /></button>
+        <span className="cart-drop-title"><IconCart size={18} /> Detalle del pedido</span>
+        <span className="cart-drop-total">${total.toFixed(2)}</span>
       </div>
 
       {cart.length === 0 ? (
@@ -17,27 +17,24 @@ export default function CartDropdown({ cart, onUpdateQty, onClose, onCheckout })
           <div className="cart-items">
             {cart.map(item => (
               <div key={item.id} className="cart-drop-item">
-                <img src={item.image1} alt={item.name} className="cart-thumb" />
+                <button className="btn-remove-item" onClick={() => onRemove(item.id)} title="Quitar">
+                  <IconClose size={11} />
+                </button>
+                <img src={item.imagenes?.[0]} alt={item.nombre} className="cart-thumb" />
                 <div className="cart-item-info">
-                  <p className="cart-item-name">{item.name}</p>
-                  <p className="cart-item-price">${(item.price * item.qty).toFixed(2)}</p>
+                  <p className="cart-item-name">{item.nombre}</p>
                 </div>
                 <div className="qty-ctrl">
                   <button className="qty-btn" onClick={() => onUpdateQty(item.id, -1)}><IconMinus /></button>
                   <span className="qty-num">{item.qty}</span>
                   <button className="qty-btn" onClick={() => onUpdateQty(item.id, 1)}><IconPlus /></button>
                 </div>
+                <span className="cart-item-price">${(item.precio * item.qty).toFixed(2)}</span>
               </div>
             ))}
           </div>
           <div className="cart-drop-footer">
-            <div className="cart-subtotal">
-              <span>Subtotal</span>
-              <span className="subtotal-price">${subtotal.toFixed(2)}</span>
-            </div>
-            <button className="btn-checkout" onClick={onCheckout}>
-              Ir al pago →
-            </button>
+            <button className="btn-checkout" onClick={onCheckout}>Enviar pedido</button>
           </div>
         </>
       )}
