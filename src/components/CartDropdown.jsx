@@ -1,5 +1,4 @@
 import { IconClose, IconPlus, IconMinus, IconCart } from "./icons";
-import { formatPrice } from "../utils/format";
 
 export default function CartDropdown({ cart, onUpdateQty, onRemove, onClose, onCheckout }) {
   const total = cart.reduce((s, i) => s + i.precio * i.qty, 0);
@@ -8,7 +7,7 @@ export default function CartDropdown({ cart, onUpdateQty, onRemove, onClose, onC
     <div className="cart-dropdown">
       <div className="cart-drop-header">
         <span className="cart-drop-title"><IconCart size={18} /> Detalle del pedido</span>
-        <span className="cart-drop-total">{formatPrice(total)}</span>
+        <span className="cart-drop-total">${total.toFixed(2)}</span>
       </div>
 
       {cart.length === 0 ? (
@@ -30,7 +29,7 @@ export default function CartDropdown({ cart, onUpdateQty, onRemove, onClose, onC
                   <span className="qty-num">{item.qty}</span>
                   <button className="qty-btn" onClick={() => onUpdateQty(item.id, 1)}><IconPlus /></button>
                 </div>
-                <span className="cart-item-price">{formatPrice(item.precio * item.qty)}</span>
+                <span className="cart-item-price">${(item.precio * item.qty).toFixed(2)}</span>
               </div>
             ))}
           </div>

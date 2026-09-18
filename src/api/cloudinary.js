@@ -1,6 +1,6 @@
 // Pegá acá tu Cloud Name y el nombre del upload preset "unsigned" que creaste
 const CLOUD_NAME    = "deyjiiuvs";
-const UPLOAD_PRESET = "elume-ar";
+const UPLOAD_PRESET = "casa-iris";
 
 export async function uploadToCloudinary(file, folder = "products") {
   const formData = new FormData();
