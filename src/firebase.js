@@ -1,19 +1,26 @@
-import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCIwfd2InvQVcMnhqgn8NdIF5Rb7MaSmj4",
-  authDomain: "leonard-3d4a5.firebaseapp.com",
-  projectId: "leonard-3d4a5",
-  storageBucket: "leonard-3d4a5.firebasestorage.app",
-  messagingSenderId: "1014249401404",
-  appId: "1:1014249401404:web:6ffbc9668b1cd66863a739",
-  measurementId: "G-RVZCRLW5QS",
+  apiKey: "AIzaSyB6VBLDmJ0tiuyO4WNw40fCYddzwnW4umQ",
+  authDomain: "elume-ar.firebaseapp.com",
+  projectId: "elume-ar",
+  storageBucket: "elume-ar.firebasestorage.app",
+  messagingSenderId: "762445967049",
+  appId: "1:762445967049:web:9a02d58d61e492cc0f6718",
+  measurementId: "G-XB7NCB16PF"
 };
 
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);

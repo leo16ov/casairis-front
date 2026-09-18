@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { IconCart, IconSearch, IconWhatsApp } from "./icons";
 import CartDropdown from "./CartDropdown";
-
-// TODO: reemplazá por tu número real de WhatsApp (mostrado en el header)
-const CONTACT_PHONE_DISPLAY = "11-3370-4879";
+import { CONTACT_PHONE_DISPLAY } from "../config";
 
 export default function Header({
   setPage, cart, onUpdateQty, onRemoveFromCart,
@@ -28,17 +26,29 @@ export default function Header({
     <header className="site-header">
       <div className="header-top">
         <button className="logo-btn" onClick={goHome}>
-          <span className="logo-text">ÉLUME</span>
+          <span className="logo-text">Casa Iris</span>
+          <span className="logo-tagline">Perfumería</span>
         </button>
 
         <div className="search-wrap">
           <input
             className="search-input"
             type="text"
-            placeholder="BUSCAR"
+            inputMode="search"
+            aria-label="Buscar perfumes"
+            placeholder="Buscar perfumes… ej: Eros, Sauvage, 212 VIP"
             value={search}
             onChange={e => { setSearch(e.target.value); setActiveCategory("todos"); setPage("home"); }}
           />
+          {search && (
+            <button
+              className="search-clear-btn"
+              aria-label="Limpiar búsqueda"
+              onClick={() => setSearch("")}
+            >
+              ×
+            </button>
+          )}
           <span className="search-icon"><IconSearch /></span>
         </div>
 

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { IconCart } from "../components/icons";
 import { createOrder } from "../api/api";     // ← nuevo import
-
-// ...
+import { WHATSAPP_NUMBER } from "../config";
+import { formatPrice } from "../utils/format";
 
 export default function CheckoutPage({ cart = [], setPage, onOrderComplete }) {
   const [form, setForm] = useState({ name: "", email: "", areaCode: "", phone: "", message: "" });
@@ -40,13 +40,13 @@ export default function CheckoutPage({ cart = [], setPage, onOrderComplete }) {
       // por un error de guardado.
     }
 
-    const lines = cart.map(i => `• ${i.nombre} x${i.qty} — $${(i.precio * i.qty).toFixed(2)}`).join("\n");
+    const lines = cart.map(i => `• ${i.nombre} x${i.qty} — ${formatPrice(i.precio * i.qty)}`).join("\n");
     const message =
 `¡Hola! Quiero hacer un pedido:
 
 ${lines}
 
-Total: $${total.toFixed(2)}
+Total: ${formatPrice(total)}
 
 Nombre: ${form.name}
 Email: ${form.email}
@@ -96,12 +96,15 @@ Teléfono: ${form.areaCode} ${form.phone}${form.message ? `\nMensaje: ${form.mes
           <textarea className="form-input form-textarea" rows={3} value={form.message} onChange={set("message")} />
         </div>
 
-        <button className="btn-confirm" onClick={handleSubmit}>Enviar pedido →</button>
+        <button className="btn-confirm" onClick={handleSubmit} disabled={sending}>
+          {sending ? "Enviando…" : "Enviar pedido por WhatsApp →"}
+        </button>
+        <p className="checkout-trust-note">🔒 Coordinamos el pago y el envío directamente por WhatsApp.</p>
 
         <div className="checkout-order-detail">
           <div className="cart-drop-header">
             <span className="cart-drop-title"><IconCart size={18} /> Detalle del pedido</span>
-            <span className="cart-drop-total">${total.toFixed(2)}</span>
+            <span className="cart-drop-total">{formatPrice(total)}</span>
           </div>
 
           {cart.length === 0 ? (
@@ -115,7 +118,7 @@ Teléfono: ${form.areaCode} ${form.phone}${form.message ? `\nMensaje: ${form.mes
                     <p className="cart-item-name">{i.nombre}</p>
                     <p className="cart-item-price">× {i.qty}</p>
                   </div>
-                  <span className="cart-item-price">${(i.precio * i.qty).toFixed(2)}</span>
+                  <span className="cart-item-price">{formatPrice(i.precio * i.qty)}</span>
                 </div>
               ))}
             </div>

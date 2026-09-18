@@ -4,6 +4,7 @@ import {
   IconCart, IconPlus, IconMinus,
   IconChevronLeft, IconChevronRight, IconClose,
 } from "./icons";
+import { formatPrice } from "../utils/format";
 
 const HOVER_INTERVAL_MS = 1800;
 const PLACEHOLDER = "https://placehold.co/400x500?text=Sin+imagen";
@@ -82,17 +83,17 @@ export default function ProductCard({ product, qty = 0, onAdd, onUpdateQty }) {
         <h3 className="product-name">{product.nombre}</h3>
 
         <div className="product-footer">
-          <span className="product-price">${product.precio.toFixed(2)}</span>
+          <span className="product-price">{formatPrice(product.precio)}</span>
 
           {qty === 0 ? (
-            <button className="btn-cart-add" onClick={() => onAdd(product)} title="Agregar al carrito">
+            <button className="btn-cart-add" onClick={() => onAdd(product)} title="Agregar al carrito" aria-label={`Agregar ${product.nombre} al carrito`}>
               <IconCart size={18} />
             </button>
           ) : (
             <div className="qty-ctrl qty-ctrl-card">
-              <button className="qty-btn" onClick={() => onUpdateQty(product.id, -1)}><IconMinus /></button>
+              <button className="qty-btn" onClick={() => onUpdateQty(product.id, -1)} aria-label="Quitar unidad"><IconMinus /></button>
               <span className="qty-num">{qty}</span>
-              <button className="qty-btn" onClick={() => onUpdateQty(product.id, 1)}><IconPlus /></button>
+              <button className="qty-btn" onClick={() => onUpdateQty(product.id, 1)} aria-label="Agregar unidad"><IconPlus /></button>
             </div>
           )}
         </div>
